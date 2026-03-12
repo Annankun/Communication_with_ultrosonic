@@ -10,6 +10,9 @@
 #include "sensor_status.h"
 #include "sensor_sample.h"
 
+/* Keep one definition so sensor_sample.c links cleanly on RX too. */
+sensor_status_t g_sensor_status;
+
 ringbuf_t         rx_ring;
 volatile uint32_t rx_overflow_count;
 volatile uint32_t hw_overrun_count;
