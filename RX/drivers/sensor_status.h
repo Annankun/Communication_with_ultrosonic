@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #define IR_COUNT   6u
-#define US_COUNT   3u
+#define US_COUNT   4u
 
 typedef struct {
     uint8_t  ir_obs[IR_COUNT];

@@ -1,12 +1,6 @@
+#include "ir_sensor.h"
 
-#ifndef IR_SENSOR_H
-#define IR_SENSOR_H
-
-#include "MKL25Z4.h"
-#include "pin_config.h"     //SIM clock gates, PORT_PCR_MUX macros
-#include "sensor_status.h"  //IR_COUNT = 6
-
-static inline void ir_sensor_init(void)
+void ir_sensor_init(void)
 {
 
     SIM->SCGC5 |= SIM_SCGC5_PORTB_MASK | SIM_SCGC5_PORTE_MASK;
@@ -25,7 +19,7 @@ static inline void ir_sensor_init(void)
 }
 
 
-static inline void ir_sensor_read(uint8_t obs[IR_COUNT])
+void ir_sensor_read(uint8_t obs[IR_COUNT])
 {
     uint32_t pdir_e = GPIOE->PDIR;
     uint32_t pdir_b = GPIOB->PDIR;
@@ -37,5 +31,3 @@ static inline void ir_sensor_read(uint8_t obs[IR_COUNT])
     obs[4] = (uint8_t)((pdir_b >> 9)  & 1u);   //PTB9
     obs[5] = (uint8_t)((pdir_b >> 8)  & 1u);   //PTB8
 }
-
-#endif
