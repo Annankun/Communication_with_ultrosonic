@@ -21,13 +21,13 @@
 #define COMM_UART_IRQn      UART2_IRQn
 #define COMM_UART_IRQHandler UART2_IRQHandler
 
-#define COMM_TX_PORT    PORTD
-#define COMM_TX_PIN     3       /* PTD3 - UART2_TX (ALT3) */
+#define COMM_TX_PORT    PORTE
+#define COMM_TX_PIN     22      /* PTE22 - UART2_TX (ALT4) */
 
-/* #define COMM_RX_PORT    PORTD */
-/* #define COMM_RX_PIN     2 */   /* PTD2 - UART2_RX (ALT3) */
+/* #define COMM_RX_PORT    PORTE */
+/* #define COMM_RX_PIN     23 */  /* PTE23 - UART2_RX (ALT4) */
 
-#define COMM_UART_ALT   3       /* Port mux ALT3 for UART2 */
+#define COMM_UART_ALT   4       /* Port mux ALT4 for UART2 */
 #define COMM_BAUD_RATE  9600
 
 /* ---- IR Obstacle Sensor count (shared between TX and RX) ---- */
