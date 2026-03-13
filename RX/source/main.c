@@ -1,7 +1,6 @@
 
 
 #include "MKL25Z4.h"
-#include "pin_config_rx.h"
 #include "pin_config.h"
 #include "uart.h"
 #include "debug_uart.h"
@@ -106,7 +105,6 @@ int main(void)
     SysTick_Config(SystemCoreClock / 1000u);
 
     pin_config_init();
-    pin_config_rx_init();
     uart2_init();
     debug_uart_init();
 

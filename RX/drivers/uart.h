@@ -3,8 +3,6 @@
 
 #include "MKL25Z4.h"
 #include "pin_config.h"
-#include "ir_sensor.h"
-#include "pin_config_rx.h"
 
 /*
  * UART2 polling driver for Step 1 (byte-level connectivity).
