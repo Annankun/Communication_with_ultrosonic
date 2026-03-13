@@ -1,7 +1,6 @@
 
 
 #include "MKL25Z4.h"
-#include "pin_config_rx.h"
 #include "pin_config.h"
 #include "uart.h"
 #include "debug_uart.h"
@@ -9,6 +8,9 @@
 #include "protocol.h"
 #include "sensor_status.h"
 #include "sensor_sample.h"
+
+/* Keep one definition so sensor_sample.c links cleanly on RX too. */
+sensor_status_t g_sensor_status;
 
 ringbuf_t         rx_ring;
 volatile uint32_t rx_overflow_count;
@@ -103,7 +105,6 @@ int main(void)
     SysTick_Config(SystemCoreClock / 1000u);
 
     pin_config_init();
-    pin_config_rx_init();
     uart2_init();
     debug_uart_init();
 
