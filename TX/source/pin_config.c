@@ -20,7 +20,7 @@ void pin_config_init(void)
     RGB_GREEN_GPIO->PSOR = (1u << RGB_GREEN_PIN);
     RGB_BLUE_GPIO->PSOR  = (1u << RGB_BLUE_PIN);
 
-    /* --- UART2 pins: ALT3 mux --- */
+    /* --- UART2 pins: ALT4 mux --- */
     COMM_TX_PORT->PCR[COMM_TX_PIN] = PORT_PCR_MUX(COMM_UART_ALT);
 
     /* Enable UART2 clock */
