@@ -8,6 +8,7 @@
 #include "protocol.h"
 #include "sensor_status.h"
 #include "sensor_sample.h"
+#include "lcd.h"
 
 /* Keep one definition so sensor_sample.c links cleanly on RX too. */
 sensor_status_t g_sensor_status;
@@ -65,6 +66,27 @@ static void debug_putdec32(int32_t n)
     while (i > 0) debug_putchar(tmp[--i]);
 }
 
+/* Display US sensor obstacle bits on LCD row 0.
+   Format: "US:XXXX  " where X is '1'(obstacle) or '0'(clear), 8 chars total. */
+static void lcd_print_us(const snapshot_t *s)
+{
+    char buf[LCD_COLUMNS + 1];
+    uint8_t i;
+
+    buf[0] = 'U';
+    buf[1] = 'S';
+    buf[2] = ':';
+    for (i = 0; i < US_COUNT; i++)
+        buf[3 + i] = s->us_obs[i] ? '1' : '0';
+    /* Pad remaining columns with spaces */
+    for (i = 3 + US_COUNT; i < LCD_COLUMNS; i++)
+        buf[i] = ' ';
+    buf[LCD_COLUMNS] = '\0';
+
+    set_cursor(0, 0);
+    print_lcd(buf);
+}
+
 static void debug_print_rx(const snapshot_t *s)
 {
     uint8_t i;
@@ -107,6 +129,7 @@ int main(void)
     pin_config_init();
     uart2_init();
     debug_uart_init();
+    init_lcd();
 
     RGB_ALL_OFF();
     parser_init(&parser);
@@ -137,6 +160,7 @@ int main(void)
                     if (parser.type == FRAME_TYPE_SENSOR &&
                         parser.len  == SNAPSHOT_PAYLOAD_BYTES) {
                         snapshot_unpack(&snap, parser.payload);
+                        lcd_print_us(&snap);
                         if (++debug_ctr >= 10) {
                             debug_ctr = 0;
                             debug_print_rx(&snap);
