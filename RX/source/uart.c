@@ -1,4 +1,7 @@
 #include "uart.h"
+#include "ringbuf.h"
+
+extern ringbuf_t rx_ring;
 
 void uart2_init(void)
 {
@@ -17,8 +20,11 @@ void uart2_init(void)
     /* 8-N-1, no parity */
     COMM_UART->C1 = 0;
 
-    /* Enable transmitter and receiver */
-    COMM_UART->C2 = UART_C2_TE_MASK | UART_C2_RE_MASK;
+    /* Enable transmitter, receiver and RX interrupt */
+    COMM_UART->C2 = UART_C2_TE_MASK | UART_C2_RE_MASK | UART_C2_RIE_MASK;
+
+    NVIC_ClearPendingIRQ(COMM_UART_IRQn);
+    NVIC_EnableIRQ(COMM_UART_IRQn);
 }
 
 /* Blocking send one byte */
@@ -36,12 +42,8 @@ void uart2_puts(const char *s)
         uart2_putchar((uint8_t)*s++);
 }
 
-/* Non-blocking receive: returns 1 if byte available, 0 otherwise */
+/* Non-blocking receive from ISR ring buffer: returns 1 if byte available */
 int uart2_getchar(uint8_t *out)
 {
-    if (COMM_UART->S1 & UART_S1_RDRF_MASK) {
-        *out = COMM_UART->D;
-        return 1;
-    }
-    return 0;
+    return ring_pop(&rx_ring, out);
 }
