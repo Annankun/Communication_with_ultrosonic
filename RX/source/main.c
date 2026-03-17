@@ -71,8 +71,8 @@ static void debug_print_rx(const snapshot_t *s)
 
     PRINTF("[RX] IR=");
     for (i = 0; i < IR_COUNT; i++) debug_putchar(s->ir_obs[i] ? '1' : '0');
-    PRINTF(" US=");
-    for (i = 0; i < US_COUNT; i++) debug_putchar(s->us_obs[i] ? '1' : '0');
+    PRINTF(" US_PRI=");
+    debug_putchar((char)('0' + s->us_priority));
     PRINTF(" TOF="); debug_putchar(s->tof_obstacle ? '1' : '0');
     PRINTF(" GPS="); debug_putchar(s->gps_valid ? '1' : '0');
     PRINTF(" LAT="); debug_putdec32(s->lat_deg7);
@@ -95,7 +95,7 @@ int main(void)
     /* Default snapshot: all clear */
     uint8_t i;
     for (i = 0; i < IR_COUNT; i++) snap.ir_obs[i] = 1;
-    for (i = 0; i < US_COUNT; i++) snap.us_obs[i] = 1;
+    snap.us_priority = 0;
     snap.tof_obstacle = 1;
     snap.gps_valid    = 0;
     snap.lat_deg7     = 0;
@@ -105,6 +105,9 @@ int main(void)
     SysTick_Config(SystemCoreClock / 1000u);
 
     pin_config_init();
+    ring_init(&rx_ring);
+    rx_overflow_count = 0;
+    hw_overrun_count = 0;
     uart2_init();
     debug_uart_init();
 
