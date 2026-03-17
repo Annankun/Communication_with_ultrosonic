@@ -11,6 +11,7 @@
 #include "delay.h"
 #include "ultrasonic.h"
 #include "timers.h"
+#include "lcd.h"
 
 
 sensor_status_t g_sensor_status;
@@ -144,6 +145,31 @@ static void debug_print_tx(const snapshot_t *s)
     PRINTF("\r\n");
 }
 
+
+static const char *us_priority_text(uint8_t p)
+{
+    switch (p) {
+    case 1u: return "US: LEFT!";
+    case 2u: return "US: RIGHT!";
+    case 3u: return "US: BACK!";
+    default: return "US: CLEAR";
+    }
+}
+
+static void lcd_update_us_if_changed(uint8_t us_priority)
+{
+    static uint8_t last_us_priority = 0xFFu;
+
+    if (us_priority == last_us_priority) {
+        return;
+    }
+
+    last_us_priority = us_priority;
+    Clear_LCD();
+    Set_Cursor(0u, 0u);
+    Print_LCD((char *)us_priority_text(us_priority));
+}
+
 /* ====================================================================
  * main
  * ==================================================================== */
@@ -176,6 +202,9 @@ int main(void)
         RGB_GREEN_OFF(); delay_ms(150);
     }
 
+    Init_LCD();
+    lcd_update_us_if_changed(0u);
+
     PRINTF("[SENSOR] Sensor board ready. Polling all sensors at 10 Hz.\r\n");
 
     while (1) {
@@ -184,6 +213,9 @@ int main(void)
 
         /* 2. Copy g_sensor_status into snapshot */
         snapshot_sample(&snap);
+
+        /* 2.1 Update LCD only when US priority changes */
+        lcd_update_us_if_changed(snap.us_priority);
 
         /* 3. Red LED = any obstacle */
         if (snapshot_any_obstacle(&snap))
