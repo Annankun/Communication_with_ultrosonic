@@ -39,7 +39,8 @@ static void delay_ms(uint32_t ms)
         ;
 }
 
-#define US_THRESHOLD_CM   10u               /* obstacle if closer than this */
+#define SIDE_THRESH_CM   10u
+#define BACK_THRESH_CM   10u
 
 static void tof_init(void) { /* TODO */ }
 
@@ -74,17 +75,28 @@ static void sensors_init_all(void)
 
 static void update_sensor_status(void)
 {
-    uint32_t cm;
+    uint32_t dist_s1;
+    uint32_t dist_s2;
+    uint32_t dist_s3;
 
     ir_sensor_read(g_sensor_status.ir_obs);
 
-    cm = Ultrasonic_MeasureCm_Left();
-    g_sensor_status.us_obs[0] = (cm > 0u && cm < US_THRESHOLD_CM) ? 0u : 1u;
-    cm = Ultrasonic_MeasureCm_Right();
-    g_sensor_status.us_obs[1] = (cm > 0u && cm < US_THRESHOLD_CM) ? 0u : 1u;
-    cm = Ultrasonic_MeasureCm_Back();
-    g_sensor_status.us_obs[2] = (cm > 0u && cm < US_THRESHOLD_CM) ? 0u : 1u;
-    g_sensor_status.us_obs[3] = 1u;  /* no 4th sensor */
+    dist_s1 = Ultrasonic_MeasureCm_Left();
+    dist_s2 = Ultrasonic_MeasureCm_Right();
+    dist_s3 = Ultrasonic_MeasureCm_Back();
+
+    if (dist_s3 > 0u && dist_s3 < BACK_THRESH_CM) {
+        g_sensor_status.us_priority = 3u;
+    } else if ((dist_s1 > 0u && dist_s1 < SIDE_THRESH_CM) &&
+               (dist_s2 > 0u && dist_s2 < SIDE_THRESH_CM)) {
+        g_sensor_status.us_priority = (dist_s1 < dist_s2) ? 1u : 2u;
+    } else if (dist_s1 > 0u && dist_s1 < SIDE_THRESH_CM) {
+        g_sensor_status.us_priority = 1u;
+    } else if (dist_s2 > 0u && dist_s2 < SIDE_THRESH_CM) {
+        g_sensor_status.us_priority = 2u;
+    } else {
+        g_sensor_status.us_priority = 0u;
+    }
 
     tof_read(&g_sensor_status.tof_obstacle);
     gps_read(&g_sensor_status.gps_valid,
@@ -94,7 +106,7 @@ static void update_sensor_status(void)
 
 /* ====================================================================
  * debug_print_tx
- * Format: [TX] IR=110010 US=0011 TOF=1 GPS=1 LAT=+374230000 LON=-1220840000
+ * Format: [TX] IR=110010 US_PRI=2 TOF=1 GPS=1 LAT=+374230000 LON=-1220840000
  * ==================================================================== */
 
 static void debug_putdec32(int32_t n)
@@ -123,8 +135,8 @@ static void debug_print_tx(const snapshot_t *s)
 
     PRINTF("[TX] IR=");
     for (i = 0; i < IR_COUNT; i++) debug_putchar(s->ir_obs[i] ? '1' : '0');
-    PRINTF(" US=");
-    for (i = 0; i < US_COUNT; i++) debug_putchar(s->us_obs[i] ? '1' : '0');
+    PRINTF(" US_PRI=");
+    debug_putchar((char)('0' + s->us_priority));
     PRINTF(" TOF="); debug_putchar(s->tof_obstacle ? '1' : '0');
     PRINTF(" GPS="); debug_putchar(s->gps_valid ? '1' : '0');
     PRINTF(" LAT="); debug_putdec32(s->lat_deg7);

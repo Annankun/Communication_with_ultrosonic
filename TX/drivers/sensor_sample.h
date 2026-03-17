@@ -4,11 +4,11 @@
 #include <stdint.h>
 #include "sensor_status.h"
 
-#define SNAPSHOT_PAYLOAD_BYTES  20u
+#define SNAPSHOT_PAYLOAD_BYTES  17u
 
 typedef struct {
     uint8_t  ir_obs[IR_COUNT];
-    uint8_t  us_obs[US_COUNT];
+    uint8_t  us_priority;
     uint8_t  tof_obstacle;
     uint8_t  gps_valid;
     int32_t  lat_deg7;
