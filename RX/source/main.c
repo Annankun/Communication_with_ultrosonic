@@ -62,7 +62,6 @@ int main(void)
     uint32_t last_valid_rx = 0;
     uint8_t  first_frame   = 1;
     uint8_t  in_safe_mode  = 0;
-    uint8_t  in_estop      = 0;
 
     SystemCoreClockUpdate();
     SysTick_Config(SystemCoreClock / 1000u);
@@ -84,52 +83,41 @@ int main(void)
     }
 
     while (1) {
-
         /* ---- 1. Process incoming bytes ---- */
-        if (in_estop) {
-            /* Flush ring and reset parser so we start clean on resume */
-            while (uart2_getchar(&c))
-                ;
-            parser_init(&parser);
-            RGB_GREEN_OFF();
-        } else {
-            while (uart2_getchar(&c)) {
-                int result = parser_feed(&parser, c);
+        while (uart2_getchar(&c)) {
+            int result = parser_feed(&parser, c);
 
-                if (result == PARSE_OK) {
-                    last_valid_rx = ms_ticks;
-                    first_frame   = 0;
+            if (result == PARSE_OK) {
+                last_valid_rx = ms_ticks;
+                first_frame   = 0;
 
-                    if (parser.type == FRAME_TYPE_SENSOR && parser.len == 1u) {
-                        us_priority = parser.payload[0];
-                        if (++debug_ctr >= 10) {
-                            debug_ctr = 0;
-                            debug_print_rx(us_priority);
-                        }
+                if (parser.type == FRAME_TYPE_SENSOR && parser.len == 1u) {
+                    us_priority = parser.payload[0];
+                    if (++debug_ctr >= 10) {
+                        debug_ctr = 0;
+                        debug_print_rx(us_priority);
                     }
-
-                    if (in_safe_mode) {
-                        in_safe_mode = 0;
-                        if (!in_estop) RGB_BLUE_OFF();
-                    }
-
-                    if (!in_estop) {
-                        if (us_priority != 0u)
-                            RGB_RED_ON();
-                        else
-                            RGB_RED_OFF();
-                    }
-
-                    RGB_GREEN_ON();
                 }
-                /* PARSE_BAD_CRC: silently discard */
-            }
 
-            RGB_GREEN_OFF();
+                if (in_safe_mode) {
+                    in_safe_mode = 0;
+                    RGB_BLUE_OFF();
+                }
+
+                if (us_priority != 0u)
+                    RGB_RED_ON();
+                else
+                    RGB_RED_OFF();
+
+                RGB_GREEN_ON();
+            }
+            /* PARSE_BAD_CRC: silently discard */
         }
 
+        RGB_GREEN_OFF();
+
         /* ---- 2. Timeout fail-safe: 500 ms without valid frame ---- */
-        if (!first_frame && !in_safe_mode && !in_estop &&
+        if (!first_frame && !in_safe_mode &&
             (ms_ticks - last_valid_rx) >= 500u) {
             in_safe_mode = 1;
             RGB_BLUE_ON();
