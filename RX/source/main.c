@@ -7,9 +7,8 @@
 #include "ringbuf.h"
 #include "protocol.h"
 #include "sensor_status.h"
-#include "sensor_sample.h"
 
-/* Keep one definition so sensor_sample.c links cleanly on RX too. */
+/* Keep one definition for shared headers. */
 sensor_status_t g_sensor_status;
 
 ringbuf_t         rx_ring;
@@ -46,60 +45,24 @@ static void delay_ms(uint32_t ms)
 }
 
 
-static void debug_putdec32(int32_t n)
+static void debug_print_rx(uint8_t us_priority)
 {
-    char tmp[11];
-    int  i = 0;
-    uint32_t uval;
-
-    if (n < 0) {
-        debug_putchar('-');
-        uval = (uint32_t)(-(n + 1)) + 1u;
-    } else {
-        debug_putchar('+');
-        uval = (uint32_t)n;
-    }
-
-    if (uval == 0) { debug_putchar('0'); return; }
-    while (uval > 0) { tmp[i++] = '0' + (char)(uval % 10); uval /= 10; }
-    while (i > 0) debug_putchar(tmp[--i]);
-}
-
-static void debug_print_rx(const snapshot_t *s)
-{
-    uint8_t i;
-
-    PRINTF("[RX] IR=");
-    for (i = 0; i < IR_COUNT; i++) debug_putchar(s->ir_obs[i] ? '1' : '0');
-    PRINTF(" US_PRI=");
-    debug_putchar((char)('0' + s->us_priority));
-    PRINTF(" TOF="); debug_putchar(s->tof_obstacle ? '1' : '0');
-    PRINTF(" GPS="); debug_putchar(s->gps_valid ? '1' : '0');
-    PRINTF(" LAT="); debug_putdec32(s->lat_deg7);
-    PRINTF(" LON="); debug_putdec32(s->lon_deg7);
+    PRINTF("[RX] US_PRI=");
+    debug_putchar((char)('0' + us_priority));
     PRINTF("\r\n");
 }
 
 int main(void)
 {
-    snapshot_t snap;
     parser_t   parser;
     uint8_t    c;
     uint8_t    debug_ctr  = 0;
+    uint8_t    us_priority = 0u;
 
     uint32_t last_valid_rx = 0;
     uint8_t  first_frame   = 1;
     uint8_t  in_safe_mode  = 0;
     uint8_t  in_estop      = 0;
-
-    /* Default snapshot: all clear */
-    uint8_t i;
-    for (i = 0; i < IR_COUNT; i++) snap.ir_obs[i] = 1;
-    snap.us_priority = 0;
-    snap.tof_obstacle = 1;
-    snap.gps_valid    = 0;
-    snap.lat_deg7     = 0;
-    snap.lon_deg7     = 0;
 
     SystemCoreClockUpdate();
     SysTick_Config(SystemCoreClock / 1000u);
@@ -137,12 +100,11 @@ int main(void)
                     last_valid_rx = ms_ticks;
                     first_frame   = 0;
 
-                    if (parser.type == FRAME_TYPE_SENSOR &&
-                        parser.len  == SNAPSHOT_PAYLOAD_BYTES) {
-                        snapshot_unpack(&snap, parser.payload);
+                    if (parser.type == FRAME_TYPE_SENSOR && parser.len == 1u) {
+                        us_priority = parser.payload[0];
                         if (++debug_ctr >= 10) {
                             debug_ctr = 0;
-                            debug_print_rx(&snap);
+                            debug_print_rx(us_priority);
                         }
                     }
 
@@ -152,7 +114,7 @@ int main(void)
                     }
 
                     if (!in_estop) {
-                        if (snapshot_any_obstacle(&snap))
+                        if (us_priority != 0u)
                             RGB_RED_ON();
                         else
                             RGB_RED_OFF();
