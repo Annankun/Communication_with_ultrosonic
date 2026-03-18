@@ -43,23 +43,23 @@ static void delay_ms(uint32_t ms)
 #define SIDE_THRESH_CM   10u
 #define BACK_THRESH_CM   10u
 
-static void tof_init(void) { /* TODO */ }
-
-static void tof_read(uint8_t *obstacle)
-{
-    /* TODO: read distance; set *obstacle = (dist_mm < threshold) ? 0 : 1 */
-    *obstacle = 1;
-}
-
-static void gps_init(void) { /* TODO */ }
-
-static void gps_read(uint8_t *valid, int32_t *lat_deg7, int32_t *lon_deg7)
-{
-    /* TODO: parse latest NMEA sentence */
-    *valid    = 0;
-    *lat_deg7 = 0;
-    *lon_deg7 = 0;
-}
+// static void tof_init(void) { /* TODO */ }
+//
+// static void tof_read(uint8_t *obstacle)
+// {
+//     /* TODO: read distance; set *obstacle = (dist_mm < threshold) ? 0 : 1 */
+//     *obstacle = 1;
+// }
+//
+// static void gps_init(void) { /* TODO */ }
+//
+// static void gps_read(uint8_t *valid, int32_t *lat_deg7, int32_t *lon_deg7)
+// {
+//     /* TODO: parse latest NMEA sentence */
+//     *valid    = 0;
+//     *lat_deg7 = 0;
+//     *lon_deg7 = 0;
+// }
 
 /* ====================================================================
  * sensors_init_all / update_sensor_status
@@ -67,11 +67,11 @@ static void gps_read(uint8_t *valid, int32_t *lat_deg7, int32_t *lon_deg7)
 
 static void sensors_init_all(void)
 {
-    ir_sensor_init();
+    // ir_sensor_init();
     Ultrasonic_InitAll();
    // Servo_Init();
-    tof_init();
-    gps_init();
+    // tof_init();
+    // gps_init();
 }
 
 static void update_sensor_status(void)
@@ -79,8 +79,12 @@ static void update_sensor_status(void)
     uint32_t dist_s1;
     uint32_t dist_s2;
     uint32_t dist_s3;
+    uint8_t  i;
 
-    ir_sensor_read(g_sensor_status.ir_obs);
+    // ir_sensor_read(g_sensor_status.ir_obs);
+    for (i = 0; i < IR_COUNT; i++) {
+        g_sensor_status.ir_obs[i] = 1u;
+    }
 
     dist_s1 = Ultrasonic_MeasureCm_Left();
     dist_s2 = Ultrasonic_MeasureCm_Right();
@@ -99,49 +103,45 @@ static void update_sensor_status(void)
         g_sensor_status.us_priority = 0u;
     }
 
-    tof_read(&g_sensor_status.tof_obstacle);
-    gps_read(&g_sensor_status.gps_valid,
-             &g_sensor_status.lat_deg7,
-             &g_sensor_status.lon_deg7);
+    // tof_read(&g_sensor_status.tof_obstacle);
+    // gps_read(&g_sensor_status.gps_valid,
+    //          &g_sensor_status.lat_deg7,
+    //          &g_sensor_status.lon_deg7);
+    g_sensor_status.tof_obstacle = 1u;
+    g_sensor_status.gps_valid    = 0u;
+    g_sensor_status.lat_deg7     = 0;
+    g_sensor_status.lon_deg7     = 0;
 }
 
 /* ====================================================================
  * debug_print_tx
- * Format: [TX] IR=110010 US_PRI=2 TOF=1 GPS=1 LAT=+374230000 LON=-1220840000
+ * Format: [TX] US_PRI=2
  * ==================================================================== */
 
-static void debug_putdec32(int32_t n)
-{
-    char tmp[11];
-    int  i = 0;
-    uint32_t uval;
-
-    if (n < 0) {
-        debug_putchar('-');
-        /* avoid UB on INT32_MIN */
-        uval = (uint32_t)(-(n + 1)) + 1u;
-    } else {
-        debug_putchar('+');
-        uval = (uint32_t)n;
-    }
-
-    if (uval == 0) { debug_putchar('0'); return; }
-    while (uval > 0) { tmp[i++] = '0' + (char)(uval % 10); uval /= 10; }
-    while (i > 0) debug_putchar(tmp[--i]);
-}
+// static void debug_putdec32(int32_t n)
+// {
+//     char tmp[11];
+//     int  i = 0;
+//     uint32_t uval;
+//
+//     if (n < 0) {
+//         debug_putchar('-');
+//         /* avoid UB on INT32_MIN */
+//         uval = (uint32_t)(-(n + 1)) + 1u;
+//     } else {
+//         debug_putchar('+');
+//         uval = (uint32_t)n;
+//     }
+//
+//     if (uval == 0) { debug_putchar('0'); return; }
+//     while (uval > 0) { tmp[i++] = '0' + (char)(uval % 10); uval /= 10; }
+//     while (i > 0) debug_putchar(tmp[--i]);
+// }
 
 static void debug_print_tx(const snapshot_t *s)
 {
-    uint8_t i;
-
-    PRINTF("[TX] IR=");
-    for (i = 0; i < IR_COUNT; i++) debug_putchar(s->ir_obs[i] ? '1' : '0');
-    PRINTF(" US_PRI=");
+    PRINTF("[TX] US_PRI=");
     debug_putchar((char)('0' + s->us_priority));
-    PRINTF(" TOF="); debug_putchar(s->tof_obstacle ? '1' : '0');
-    PRINTF(" GPS="); debug_putchar(s->gps_valid ? '1' : '0');
-    PRINTF(" LAT="); debug_putdec32(s->lat_deg7);
-    PRINTF(" LON="); debug_putdec32(s->lon_deg7);
     PRINTF("\r\n");
 }
 
