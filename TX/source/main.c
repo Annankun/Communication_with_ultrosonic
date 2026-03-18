@@ -57,6 +57,7 @@ static void update_sensor_status(void)
     uint32_t dist_s1;
     uint32_t dist_s2;
     uint32_t dist_s3;
+    uint8_t  i;
 
     dist_s1 = Ultrasonic_MeasureCm_Left();
     dist_s2 = Ultrasonic_MeasureCm_Right();
